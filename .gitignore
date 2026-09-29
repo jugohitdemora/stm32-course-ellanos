@@ -72,3 +72,4 @@ Release/
 *.hex
 *.map
 *.su
+build/
