@@ -26,7 +26,7 @@ int main(void)
     gpio_led_init();
     tim_3_init();
 
-	while(1);
+	while(1)
     {
 
     }
@@ -65,16 +65,17 @@ static void tim_3_init(void)
 
     /* Configure TIM3 */
     TIM3->CNT = (0); // Reset the counter
-    TIM3->PSC = (1000 - 1); // Set prescaler to 1000 incrementing every 1ms
+    TIM3->PSC = (16000 - 1); // Set prescaler to 1000 incrementing every 1ms
     TIM3->ARR = (2500 - 1); // Set auto-reload value to 2500 for a 2.5s period
 
 
-    TIM3->CR1 &= ~(0b11 << TIM_CR1_CEN_Pos); // Disable TIM3
-    TIM3->CR1 |= 0b01 << TIM_CR1_ARPE; // Enable auto-reload preload
-    TIM3->CR1 &= ~(TIM_CR1_DIR_Pos); // Set counter direction to upcounting
+    TIM3->CR1 &= ~TIM_CR1_CEN;   // Disable TIM3
+    TIM3->CR1 |=  TIM_CR1_ARPE;  // Enable auto-reload preload
+    TIM3->CR1 &= ~TIM_CR1_DIR;   // Set counter direction to upcounting
+    /* ... PSC, ARR, DIER, NVIC ... */
 
     TIM3->DIER |= TIM_DIER_UIE; // Enable update interrupt
     NVIC_EnableIRQ(TIM3_IRQn); // Enable TIM3 interrupt in NVIC
     
-    TIM3->CR1 |= TIM_CR1_CEN; // Enable TIM3
+    TIM3->CR1 |=  TIM_CR1_CEN;   // Enable TIM3
 }
