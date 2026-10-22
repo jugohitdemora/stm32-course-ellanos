@@ -104,7 +104,7 @@ uint16_t valor = 0; // Variable global para almacenar el valor a mostrar en el d
 
 
 #define SECRETO_VENTANA_TICKS  46     /* ~200 ms: ventana para considerar "al mismo tiempo" */
-#define SECRETO_GOOD_TICKS     465    /* Good */
+#define SECRETO_GOOD_TICKS     465    /* ~2 s: tiempo que se muestra "Good" */
 uint8_t  secreto_ultima = 0;          /* ultima fotocompuerta que se activo (4 = U4, 5 = U5, 0 = ninguna) */
 uint16_t secreto_ventana = 0;         /* ticks que quedan de la ventana */
 uint16_t secreto_good = 0;            /* ticks que quedan mostrando "Good" (0 = modo normal) */
@@ -314,7 +314,7 @@ static void display_refrescar(void)
 if (display_flag)
     {
         display_flag = 0;
-        secreto_tick();                         /* FUNCION SECRETA: avanzar los contadores de tiempo */
+        secreto_tick();                         /* descontar el tiempo de la ventana y del mensaje "Good" */
         display_seleccionar_digito(0);       
 
    /*Dividir el numero en partes para mostrarlo en los digitos*/
@@ -522,7 +522,7 @@ static void fotocompuerta_contador(void)
             {
                 valor = 0; // Reiniciar el valor cuando llega al máximo en 9999
             }
-            secreto_evento(4); // FUNCION SECRETA: avisar que se activo U4
+            secreto_evento(4); // avisar que se activo U4
         }
     }
 
@@ -546,6 +546,7 @@ static void fotocompuerta_contador(void)
 
 
 /* Registra un evento de fotocompuerta. Si la OTRA se activo hace menos de ~200 ms, muestra "Good". */
+/* Registra la activacion de una fotocompuerta. Si la otra se activo hace menos de ~200 ms, muestra "Good" */
 static void secreto_evento(uint8_t fotocompuerta)
 {
     if ((secreto_ventana > 0) && (secreto_ultima != 0) && (secreto_ultima != fotocompuerta))
@@ -562,6 +563,7 @@ static void secreto_evento(uint8_t fotocompuerta)
 }
 
 
+/* Se llama en cada interrupcion de TIM10 (~4.3 ms): descuenta la ventana y el tiempo de "Good" */
 static void secreto_tick(void)
 {
     if (secreto_ventana > 0)
