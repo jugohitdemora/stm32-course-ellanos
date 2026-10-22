@@ -91,7 +91,6 @@ static void display_seleccionar_digito(uint8_t digito);
 static void display_seleccionar_numero(uint8_t numero);
 static void fotocompuerta_init(void);
 static void fotocompuerta_contador(void);
-/* FUNCION SECRETA: "Good" cuando ambas fotocompuertas se activan casi al mismo tiempo */
 static void secreto_evento(uint8_t fotocompuerta);
 static void secreto_tick(void);
 static void display_seleccionar_letra(char letra);
@@ -338,7 +337,7 @@ if (display_flag)
             break;
     }
     
-    if (secreto_good > 0)                   /* FUNCION SECRETA: mostrar "Good" en vez del numero */
+    if (secreto_good > 0)                   /* mostrar "Good" en vez del numero */
     {
         switch (digito_actual)
         {
@@ -540,7 +539,7 @@ static void fotocompuerta_contador(void)
             {
                 valor = 9999; // Dar la vuelta entera
             }
-            secreto_evento(5); // FUNCION SECRETA: avisar que se activo U5
+            secreto_evento(5); // avisar que se activo U5
         }
     }
 }
