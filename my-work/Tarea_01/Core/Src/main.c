@@ -558,7 +558,6 @@ static void fotocompuerta_contador(void)
 
 
 /* Registra un evento de fotocompuerta. Si la OTRA se activo hace menos de ~200 ms, muestra "Good". */
-/* Registra la activacion de una fotocompuerta. Si la otra se activo hace menos de ~200 ms, muestra "Good" */
 static void secreto_evento(uint8_t fotocompuerta)
 {
     if ((secreto_ventana > 0) && (secreto_ultima != 0) && (secreto_ultima != fotocompuerta))
