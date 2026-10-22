@@ -74,7 +74,6 @@
  *    - fotocompuerta_contador(): suma o resta 1 al contador. Al pasar de
  *      9999 vuelve a 0000, y al bajar de 0000 vuelve a 9999.
  *    - display_refrescar(): multiplexa el display y lo refresca a 240Hz
- *    - secreto_evento(): muestra "Good" en vez del numero si ambas fotocompuertas se activan casi al mismo tiempo.
  * 3. Multiplexado: en cada interrupcion de TIM10 se enciende
  *    un solo digito. Para evitar el "fantasma" se sigue el orden
  *    apagar digitos -> cambiar segmentos -> encender el digito siguiente.
@@ -103,9 +102,6 @@ static void display_seleccionar_digito(uint8_t digito);
 static void display_seleccionar_numero(uint8_t numero);
 static void fotocompuerta_init(void);
 static void fotocompuerta_contador(void);
-static void secreto_evento(uint8_t fotocompuerta);
-static void secreto_tick(void);
-static void display_seleccionar_letra(char letra);
 
 
 volatile uint32_t blinky_flag = 0;
@@ -115,11 +111,6 @@ volatile uint8_t fotocompuerta_U5_flag=0;
 uint16_t valor = 0; // Variable global para almacenar el valor a mostrar en el display
 
 
-#define SECRETO_VENTANA_TICKS  46     /* ~200 ms: ventana para considerar "al mismo tiempo" */
-#define SECRETO_GOOD_TICKS     465    /* ~2 s: tiempo que se muestra "Good" */
-uint8_t  secreto_ultima = 0;          /* ultima fotocompuerta que se activo (4 = U4, 5 = U5, 0 = ninguna) */
-uint16_t secreto_ventana = 0;         /* ticks que quedan de la ventana */
-uint16_t secreto_good = 0;            /* ticks que quedan mostrando "Good" (0 = modo normal) */
 int main(void)
 {
 
@@ -326,7 +317,6 @@ static void display_refrescar(void)
 if (display_flag)
     {
         display_flag = 0;
-        secreto_tick();                         /* descontar el tiempo de la ventana y del mensaje "Good" */
         display_seleccionar_digito(0);       
 
    /*Dividir el numero en partes para mostrarlo en los digitos*/
@@ -349,30 +339,7 @@ if (display_flag)
             break;
     }
     
-    if (secreto_good > 0)                   /* mostrar "Good" en vez del numero */
-    {
-        switch (digito_actual)
-        {
-            case 1:
-                display_seleccionar_letra('G');
-                break;
-            case 2:
-                display_seleccionar_letra('o');
-                break;
-            case 3:
-                display_seleccionar_letra('o');
-                break;
-            case 4:
-                display_seleccionar_letra('d');
-                break;
-            default:
-                break;
-        }
-    }
-    else
-    {
-        display_seleccionar_numero(cifra);
-    }
+    display_seleccionar_numero(cifra);
     display_seleccionar_digito(digito_actual);
 
     digito_actual = (digito_actual % 4) + 1;
@@ -524,105 +491,26 @@ static void fotocompuerta_contador(void)
     if (fotocompuerta_U4_flag)
     {
         fotocompuerta_U4_flag = 0;
-        if (secreto_good == 0) // Solo cuenta si no se esta mostrando "Good"
+        if (valor < 9999) // Establecer el limite para dar la vuelta entera
         {
-            if (valor < 9999) // Establecer el limite para dar la vuelta entera
-            {
-                valor++;
-            }
-            else
-            {
-                valor = 0; // Reiniciar el valor cuando llega al máximo en 9999
-            }
-            secreto_evento(4); // avisar que se activo U4
+            valor++;
+        }
+        else
+        {
+            valor = 0; // Reiniciar el valor cuando llega al máximo en 9999
         }
     }
 
     if (fotocompuerta_U5_flag)
     {
         fotocompuerta_U5_flag = 0;
-        if (secreto_good == 0) // Solo cuenta si no se esta mostrando "Good"
+        if (valor > 0) // Evitar que el valor sea negativo
         {
-            if (valor > 0) // Evitar que el valor sea negativo
-            {
-                valor--;
-            }
-            else
-            {
-                valor = 9999; // Dar la vuelta entera
-            }
-            secreto_evento(5); // avisar que se activo U5
+            valor--;
         }
-    }
-}
-
-
-/* Registra un evento de fotocompuerta. Si la OTRA se activo hace menos de ~200 ms, muestra "Good". */
-static void secreto_evento(uint8_t fotocompuerta)
-{
-    if ((secreto_ventana > 0) && (secreto_ultima != 0) && (secreto_ultima != fotocompuerta))
-    {
-        secreto_good = SECRETO_GOOD_TICKS;      /* mostrar "Good"si el evento paso en menos de 200ms*/
-        secreto_ultima = 0;
-        secreto_ventana = 0;
-    }
-    else
-    {
-        secreto_ultima = fotocompuerta;         /* abrir la ventana para esta fotocompuerta */
-        secreto_ventana = SECRETO_VENTANA_TICKS;
-    }
-}
-
-
-/* Se llama en cada interrupcion de TIM10 (~4.3 ms): descuenta la ventana y el tiempo de "Good" */
-static void secreto_tick(void)
-{
-    if (secreto_ventana > 0)
-    {
-        secreto_ventana--;
-    }
-    else
-    {
-        secreto_ultima = 0;
-    }
-
-    if (secreto_good > 0)
-    {
-        secreto_good--;
-    }
-}
-
-static void display_seleccionar_letra(char letra)
-{
-    /*Apagar todos los segmentos*/
-    GPIOB->BSRR = GPIO_BSRR_BS12; // Segmento a apagado
-    GPIOC->BSRR = GPIO_BSRR_BS5 | GPIO_BSRR_BS8 | GPIO_BSRR_BS9 | GPIO_BSRR_BS6;  // Segmento b, c, d y g apagados
-    GPIOA->BSRR = GPIO_BSRR_BS12 | GPIO_BSRR_BS11; // Segmento f y e apagados
-
-    /*Encender los segmentos de la letra*/
-    switch (letra)
-    {
-        case 'G':
-            GPIOB->BSRR = GPIO_BSRR_BR12; // Encender segmento a
-            GPIOC->BSRR = GPIO_BSRR_BR8;  // Encender segmento c
-            GPIOC->BSRR = GPIO_BSRR_BR9;  // Encender segmento d
-            GPIOA->BSRR = GPIO_BSRR_BR11; // Encender segmento e
-            GPIOA->BSRR = GPIO_BSRR_BR12; // Encender segmento f
-            break;
-        case 'o':
-            GPIOC->BSRR = GPIO_BSRR_BR8;  // Encender segmento c
-            GPIOC->BSRR = GPIO_BSRR_BR9;  // Encender segmento d
-            GPIOA->BSRR = GPIO_BSRR_BR11; // Encender segmento e
-            GPIOC->BSRR = GPIO_BSRR_BR6;  // Encender segmento g
-            break;
-        case 'd':
-            GPIOC->BSRR = GPIO_BSRR_BR5;  // Encender segmento b
-            GPIOC->BSRR = GPIO_BSRR_BR8;  // Encender segmento c
-            GPIOC->BSRR = GPIO_BSRR_BR9;  // Encender segmento d
-            GPIOA->BSRR = GPIO_BSRR_BR11; // Encender segmento e
-            GPIOC->BSRR = GPIO_BSRR_BR6;  // Encender segmento g
-            break;
-        default:
-            break;
+        else
+        {
+            valor = 9999; // Dar la vuelta entera
+        }
     }
 }
