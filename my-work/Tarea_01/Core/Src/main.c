@@ -13,6 +13,18 @@
  * segmentos de 4 digitos. Dos fotocompuertas modifican ese numero: U4 lo
  * aumenta en 1 y U5 lo disminuye en 1. Un LED de estado parpadea a 1 Hz
  * para indicar que el microcontrolador esta funcionando.
+ *HARDWARE UTILIZADO
+ * ------------------
+ * - Tarjeta NUCLEO-F411RE (STM32F411RE, reloj HSI de 16 MHz) y Shield de prototipado
+ * - Boton RESET del shield: reinicia elestado del sistema
+ * - LED de estado: LED2 del shield en PH1, con resistencia de 2.7 kOhm (R4 del shield)
+ * - Display 5461BS de 4 digitos, anodo comun
+ *     - 7 resistencias de 220 Ohm, una por segmento (a-g)
+ *     - 4 transistores PNP 2N3906 (Q1-Q4), uno por digito, con emisor a 3.3 V
+ *       y resistencia de base de 470 Ohm
+ * - 2 fotocompuertas (U4, U5)
+ *     - LED infrarrojo con resistencia de 150 Ohm
+ *     - Fototransistor con pull-up externo de 6.7 kOhm a 3.3 V
  *------------------------------------------------------------------------
  * MAPA DE PINES
  * -----------------------------------------------------------------------
